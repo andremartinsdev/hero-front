@@ -1,17 +1,14 @@
 import axios from 'axios'
 import { API_CONFIG } from '../config/api'
 
-// Configuração base do axios
 const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
   headers: API_CONFIG.DEFAULT_HEADERS
 })
 
-// Interceptor para requisições
 api.interceptors.request.use(
   (config) => {
-    console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`)
     return config
   },
   (error) => {
@@ -20,16 +17,13 @@ api.interceptors.request.use(
   }
 )
 
-// Interceptor para respostas
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ ${response.status} ${response.config.url}`)
     return response
   },
   (error) => {
     console.error('❌ Erro na resposta:', error.response?.data || error.message)
     
-    // Tratamento de erros específicos
     if (error.response?.status === 404) {
       throw new Error('Recurso não encontrado')
     } else if (error.response?.status === 500) {

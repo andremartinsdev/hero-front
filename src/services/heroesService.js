@@ -1,12 +1,7 @@
 import api from './api'
 import { API_ENDPOINTS } from '../config/api'
 
-/**
- * Serviço para gerenciar heróis via API
- * Baseado na especificação OpenAPI fornecida
- */
 
-// DTOs baseados na especificação OpenAPI
 export const CreateHeroDto = {
   name: '',
   description: '',
@@ -24,24 +19,19 @@ export const GetHeroesDto = {
   weight: 0
 }
 
-/**
- * Converte dados do formulário para o formato da API
- */
 const formatHeroForAPI = (hero) => {
-  return {
+  const formatted = {
     name: hero.name || null,
     description: hero.description || null,
     height: parseInt(hero.height) || 0,
     weight: parseInt(hero.weight) || 0,
     dateOfBirth: hero.birthDate ? new Date(hero.birthDate).toISOString() : null
   }
+  return formatted
 }
 
-/**
- * Converte dados da API para o formato da aplicação
- */
 const formatHeroFromAPI = (hero) => {
-  return {
+  const formatted = {
     id: hero.id,
     name: hero.name || '',
     description: hero.description || '',
@@ -49,70 +39,68 @@ const formatHeroFromAPI = (hero) => {
     weight: hero.weight || 0,
     birthDate: hero.dateOfBirth ? hero.dateOfBirth.split('T')[0] : ''
   }
+  return formatted
 }
 
-/**
- * Busca todos os heróis
- * GET /heroes
- */
 export const getHeroes = async () => {
   try {
     const response = await api.get(API_ENDPOINTS.HEROES.LIST)
-    return response.data.map(formatHeroFromAPI)
+    
+    if (!Array.isArray(response.data)) {
+      console.error('❌ Resposta da API não é um array:', response.data)
+      return []
+    }
+    
+    const formattedHeroes = response.data.map(formatHeroFromAPI)
+    return formattedHeroes
   } catch (error) {
-    console.error('Erro ao buscar heróis:', error)
+    console.error('❌ Erro ao buscar heróis:', error)
     throw new Error('Falha ao carregar heróis')
   }
 }
 
-/**
- * Busca um herói por ID
- * GET /heroes/{id}
- */
 export const getHeroById = async (id) => {
   try {
     const response = await api.get(API_ENDPOINTS.HEROES.GET_BY_ID(id))
-    return formatHeroFromAPI(response.data)
+    
+    if (!response.data) {
+      console.error('❌ Herói não encontrado:', id)
+      throw new Error('Herói não encontrado')
+    }
+    
+    const formattedHero = formatHeroFromAPI(response.data)
+    return formattedHero
   } catch (error) {
-    console.error(`Erro ao buscar herói ${id}:`, error)
+    console.error(`❌ Erro ao buscar herói ${id}:`, error)
+    if (error.response?.status === 404) {
+      throw new Error('Herói não encontrado')
+    }
     throw new Error('Falha ao carregar herói')
   }
 }
 
-/**
- * Cria um novo herói
- * POST /heroes
- */
 export const createHero = async (heroData) => {
   try {
     const formattedData = formatHeroForAPI(heroData)
     const response = await api.post(API_ENDPOINTS.HEROES.CREATE, formattedData)
     return formatHeroFromAPI(response.data)
   } catch (error) {
-    console.error('Erro ao criar herói:', error)
+    console.error('❌ Erro ao criar herói:', error)
     throw new Error('Falha ao criar herói')
   }
 }
 
-/**
- * Atualiza um herói existente
- * PUT /heroes/{id} (assumindo que existe, baseado no padrão REST)
- */
 export const updateHero = async (id, heroData) => {
   try {
     const formattedData = formatHeroForAPI(heroData)
     const response = await api.put(API_ENDPOINTS.HEROES.UPDATE(id), formattedData)
     return formatHeroFromAPI(response.data)
   } catch (error) {
-    console.error(`Erro ao atualizar herói ${id}:`, error)
+    console.error(`❌ Erro ao atualizar herói ${id}:`, error)
     throw new Error('Falha ao atualizar herói')
   }
 }
 
-/**
- * Exclui um herói
- * DELETE /heroes?id={id}
- */
 export const deleteHero = async (id) => {
   try {
     await api.delete(API_ENDPOINTS.HEROES.DELETE, {
@@ -120,7 +108,7 @@ export const deleteHero = async (id) => {
     })
     return true
   } catch (error) {
-    console.error(`Erro ao excluir herói ${id}:`, error)
+    console.error(`❌ Erro ao excluir herói ${id}:`, error)
     throw new Error('Falha ao excluir herói')
   }
 }

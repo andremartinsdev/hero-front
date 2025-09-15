@@ -1,10 +1,13 @@
+import { createHero, deleteHero, getHeroById, getHeroes, updateHero } from '../services/heroesService'
+
 import { defineStore } from 'pinia'
-import { getHeroes, createHero, updateHero, deleteHero } from '../services/heroesService'
 
 export const useHeroesStore = defineStore('heroes', {
   state: () => ({
     heroes: [],
+    currentHero: null,
     loading: false,
+    loadingHero: false,
     error: null
   }),
 
@@ -16,7 +19,6 @@ export const useHeroesStore = defineStore('heroes', {
   },
 
   actions: {
-    // Carrega todos os heróis da API
     async loadHeroes() {
       this.loading = true
       this.error = null
@@ -30,14 +32,28 @@ export const useHeroesStore = defineStore('heroes', {
       }
     },
 
-    // Adiciona um novo herói via API
+    async loadHeroById(id) {
+      this.loadingHero = true
+      this.error = null
+      try {
+        this.currentHero = await getHeroById(id)
+        return this.currentHero
+      } catch (error) {
+        this.error = error.message
+        console.error('Erro ao carregar herói:', error)
+        throw error
+      } finally {
+        this.loadingHero = false
+      }
+    },
+
     async addHero(heroData) {
       this.loading = true
       this.error = null
       try {
         const newHero = await createHero(heroData)
         this.heroes.push(newHero)
-        return newHero
+        this.loadHeroes()
       } catch (error) {
         this.error = error.message
         throw error
@@ -46,17 +62,12 @@ export const useHeroesStore = defineStore('heroes', {
       }
     },
 
-    // Atualiza um herói existente via API
     async updateHero(id, heroData) {
       this.loading = true
       this.error = null
       try {
         const updatedHero = await updateHero(id, heroData)
-        const index = this.heroes.findIndex(hero => hero.id === id)
-        if (index !== -1) {
-          this.heroes[index] = updatedHero
-        }
-        return updatedHero
+        this.loadHeroes()
       } catch (error) {
         this.error = error.message
         throw error
@@ -65,7 +76,6 @@ export const useHeroesStore = defineStore('heroes', {
       }
     },
 
-    // Exclui um herói via API
     async deleteHero(id) {
       this.loading = true
       this.error = null
@@ -84,9 +94,12 @@ export const useHeroesStore = defineStore('heroes', {
       }
     },
 
-    // Limpa erros
     clearError() {
       this.error = null
+    },
+
+    clearCurrentHero() {
+      this.currentHero = null
     }
   }
 })
